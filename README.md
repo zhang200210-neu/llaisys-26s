@@ -1,4 +1,4 @@
-# 欢迎使用 LLAISYS
+## 欢迎使用 LLAISYS
 
 <p align="center">
 <a href="README.md" target="README.md">English</a> ｜
