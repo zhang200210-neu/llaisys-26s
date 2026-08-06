@@ -1,9 +1,9 @@
 #include "../runtime_api.hpp"
-#include "cuda_utils.hpp"
+#include "iluvatar_utils.hpp"
 
 #include <cuda_runtime.h>
 
-namespace llaisys::device::nvidia {
+namespace llaisys::device::iluvatar {
 
 namespace runtime_api {
 int getDeviceCount() {
@@ -116,4 +116,4 @@ static const LlaisysRuntimeAPI RUNTIME_API = {
 const LlaisysRuntimeAPI *getRuntimeAPI() {
     return &runtime_api::RUNTIME_API;
 }
-} // namespace llaisys::device::nvidia
+} // namespace llaisys::device::iluvatar
