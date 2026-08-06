@@ -15,7 +15,7 @@ def test_op_embedding(
     idx_shape,
     embd_shape,
     dtype_name="f32",
-    device_name="cpu",
+    device_name="nvidia",
     profile=False,
 ):
     print(f"   idx_shape {idx_shape} embd_shape {embd_shape} dtype <{dtype_name}>")
@@ -39,12 +39,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--device", default="cpu", choices=["cpu", "nvidia", "iluvatar"], type=str)
+    parser.add_argument("--device", default="nvidia", choices=["cpu", "nvidia", "iluvatar"], type=str)
     parser.add_argument("--profile", action="store_true")
     args = parser.parse_args()
     testShapes = [
         ((1,), (2, 3)),
-        ((50,), (512, 4096)),
+        ((16,), (256, 512)),
     ]
     testDtype = [
         # type

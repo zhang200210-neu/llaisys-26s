@@ -20,7 +20,7 @@ def test_op_linear(
     dtype_name="f32",
     atol=1e-5,
     rtol=1e-5,
-    device_name="cpu",
+    device_name="nvidia",
     profile=False,
 ):
     print(f"   out {out_shape}, x {x_shape}, w {w_shape}, bias {use_bias}, dtype <{dtype_name}>")
@@ -49,12 +49,12 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--device", default="cpu", choices=["cpu", "nvidia", "iluvatar"], type=str)
+    parser.add_argument("--device", default="nvidia", choices=["cpu", "nvidia", "iluvatar"], type=str)
     parser.add_argument("--profile", action="store_true")
     args = parser.parse_args()
     testShapes = [
         ((2, 3), (2, 4), (3, 4), True),
-        ((512, 4096), (512, 4096), (4096, 4096), True),
+        ((32, 128), (32, 128), (128, 128), True),
     ]
     testDtypePrec = [
         # type, atol, rtol

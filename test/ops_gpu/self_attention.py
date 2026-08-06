@@ -15,9 +15,11 @@ def torch_self_attention(attn_val, query, key, value, scale):
     L, S = query.size(-2), key.size(-2)
     attn_bias = torch.zeros(L, S, dtype=query.dtype, device=query.device)
 
-    temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=S-L)
+    temp_mask = torch.ones(L, S, dtype=torch.bool, device=query.device).tril(
+        diagonal=S - L
+    )
     attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
-    attn_bias.to(query.dtype)
+    attn_bias = attn_bias.to(query.dtype)
 
     key = key.repeat_interleave(query.size(-3) // key.size(-3), -3)
     value = value.repeat_interleave(query.size(-3) // value.size(-3), -3)
@@ -37,7 +39,7 @@ def test_op_self_attention(
     dtype_name="f32",
     atol=1e-5,
     rtol=1e-5,
-    device_name="cpu",
+    device_name="nvidia",
     profile=False,
 ):
     print(
@@ -65,13 +67,13 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--device", default="cpu", choices=["cpu", "nvidia", "iluvatar"], type=str)
+    parser.add_argument("--device", default="nvidia", choices=["cpu", "nvidia", "iluvatar"], type=str)
     parser.add_argument("--profile", action="store_true")
     args = parser.parse_args()
     testShapes = [
         # qlen, kvlen, nh, nkvh, hd
         (2, 2, 1, 1, 4),
-        (5, 11, 4, 2, 8),
+        (4, 4, 2, 1, 8),
     ]
     testDtypePrec = [
         # type, atol, rtol

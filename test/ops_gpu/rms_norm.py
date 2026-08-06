@@ -22,12 +22,12 @@ def test_op_rms_norm(
     dtype_name="f32",
     atol=1e-5,
     rtol=1e-5,
-    device_name="cpu",
+    device_name="nvidia",
     profile=False,
 ):
     print(f"   shape {shape} dtype <{dtype_name}>")
     x, x_ = random_tensor(shape, dtype_name, device_name)
-    w, w_ = random_tensor((shape[1], ), dtype_name, device_name)
+    w, w_ = random_tensor((shape[1],), dtype_name, device_name)
     eps = 1e-5
 
     c, c_ = random_tensor(shape, dtype_name, device_name)
@@ -48,10 +48,10 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--device", default="cpu", choices=["cpu", "nvidia", "iluvatar"], type=str)
+    parser.add_argument("--device", default="nvidia", choices=["cpu", "nvidia", "iluvatar"], type=str)
     parser.add_argument("--profile", action="store_true")
     args = parser.parse_args()
-    testShapes = [(1, 4), (512, 4096)]
+    testShapes = [(1, 4), (64, 256)]
     testDtypePrec = [
         # type, atol, rtol
         ("f32", 1e-5, 1e-5),

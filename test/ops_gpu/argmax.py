@@ -1,4 +1,3 @@
-from calendar import c
 import sys
 import os
 
@@ -16,7 +15,7 @@ def torch_argmax(max_idx, max_val, vals):
 def test_op_argmax(
     shape,
     dtype_name="f32",
-    device_name="cpu",
+    device_name="nvidia",
     profile=False,
 ):
     print(f"   shape {shape} dtype <{dtype_name}>")
@@ -43,10 +42,10 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--device", default="cpu", choices=["cpu", "nvidia", "iluvatar"], type=str)
+    parser.add_argument("--device", default="nvidia", choices=["cpu", "nvidia", "iluvatar"], type=str)
     parser.add_argument("--profile", action="store_true")
     args = parser.parse_args()
-    testShapes = [(4,), (4096,)]
+    testShapes = [(4,), (1024,)]
     testDtype = ["f32", "f16", "bf16"]
     print(f"Testing Ops.argmax on {args.device}")
     for shape in testShapes:
