@@ -17,6 +17,9 @@
 
 namespace llaisys::models {
 
+// -----------------------------------------------------------------------------
+// 辅助函数（与原代码逻辑一致，仅做了提取和整理）
+// -----------------------------------------------------------------------------
 
 namespace {
 
@@ -25,7 +28,7 @@ inline int defaultDeviceID(const std::vector<int> &device_ids) {
     return device_ids.empty() ? 0 : device_ids[0];
 }
 
-// 将设备 tensor 数据拷贝到主机并转换为 float 向量
+// 将设备内存中的 logits 转换为 host 上的 float 向量
 std::vector<float> deviceToHostFloat(const std::byte *data,
                                      llaisysDataType_t dtype,
                                      size_t vocab) {
@@ -47,7 +50,7 @@ std::vector<float> deviceToHostFloat(const std::byte *data,
     return host;
 }
 
-// 从 logits tensor 提取到 CPU 端的 float 向量
+// 从 logits tensor 获取 host float 向量
 std::vector<float> logitsToHost(llaisysTensor_t logits,
                                 llaisysDataType_t dtype,
                                 llaisysDeviceType_t device,
@@ -66,7 +69,7 @@ std::vector<float> logitsToHost(llaisysTensor_t logits,
     return deviceToHostFloat(tmp.data(), dtype, vocab);
 }
 
-// 从 logits tensor 在设备端直接 argmax（支持 CPU / GPU）
+// 在设备端直接 argmax
 int64_t argmaxFromLogits(llaisysTensor_t logits,
                          llaisysDataType_t dtype,
                          llaisysDeviceType_t device,
@@ -96,7 +99,7 @@ int64_t argmaxFromLogits(llaisysTensor_t logits,
     return next_token;
 }
 
-// 基于采样参数进行 token 采样
+// 基于采样参数从 logits 概率分布中采样
 int64_t sampleFromLogits(const std::vector<float> &logits,
                          const LlaisysSamplingParams *params) {
     const size_t vocab = logits.size();
@@ -184,7 +187,7 @@ int64_t sampleFromLogits(const std::vector<float> &logits,
     return indices.back();
 }
 
-// 根据 logits tensor 获取下一个 token（支持 argmax 或采样）
+// 根据 logits tensor 获取下一个 token（argmax 或采样）
 int64_t nextTokenFromLogits(llaisysTensor_t logits,
                             llaisysDataType_t dtype,
                             llaisysDeviceType_t device,
@@ -218,6 +221,9 @@ llaisysTensor_t createPackedLogitsTensor(llaisysDataType_t dtype,
 
 } // anonymous namespace
 
+// -----------------------------------------------------------------------------
+// Qwen2 实现
+// -----------------------------------------------------------------------------
 
 Qwen2::Qwen2(const LlaisysQwen2Meta &meta,
              const LlaisysQwen2Weights &weights,
@@ -285,6 +291,9 @@ void Qwen2::clearPackedState() {
     _packed_prompts.clear();
 }
 
+// -----------------------------------------------------------------------------
+// 单序列推理
+// -----------------------------------------------------------------------------
 
 int64_t Qwen2::infer(const int64_t *token_ids, size_t ntoken) {
     return prefill(token_ids, ntoken);
@@ -325,6 +334,10 @@ int64_t Qwen2::step(const int64_t *token_ids, size_t ntoken) {
     tensorDestroy(logits);
     return next_token;
 }
+
+// -----------------------------------------------------------------------------
+// 打包序列推理
+// -----------------------------------------------------------------------------
 
 bool Qwen2::prefillPacked(const int64_t *token_ids,
                           size_t ntoken,
@@ -440,12 +453,14 @@ bool Qwen2::stepPacked(const int64_t *token_ids,
         step_tokens[i] = token_ids[begin];
     }
 
+    // 构建 contexts 向量（直接从成员拷贝）
     std::vector<LlaisysQwen2KVContext *> contexts(_packed_kv_contexts.begin(),
                                                   _packed_kv_contexts.end());
     llaisysTensor_t logits = createPackedLogitsTensor(_meta.dtype, _device, device_id, nseq, _meta.voc);
     if (!logits) return false;
 
-    if (!_decoder.decodePacked(step_tokens.data(), nseq, contexts.data(), logits, kBlockTokens)) {
+    // 注意：第三个参数是 contexts 对象本身，不是 contexts.data()
+    if (!_decoder.decodePacked(step_tokens.data(), nseq, contexts, logits, kBlockTokens)) {
         tensorDestroy(logits);
         clearPackedState();
         return false;
@@ -465,7 +480,6 @@ bool Qwen2::stepPacked(const int64_t *token_ids,
             clearPackedState();
             return false;
         }
-        // 记录已生成的 token（用于后续可能的串联）
         _packed_prompts[i].push_back(step_tokens[i]);
         _packed_prompts[i].push_back(out_next_tokens[i]);
     }
@@ -474,7 +488,9 @@ bool Qwen2::stepPacked(const int64_t *token_ids,
     return true;
 }
 
-
+// -----------------------------------------------------------------------------
+// 支持采样的单序列推理
+// -----------------------------------------------------------------------------
 
 int64_t Qwen2::prefillSampling(const int64_t *token_ids, size_t ntoken,
                                const LlaisysSamplingParams *params) {
