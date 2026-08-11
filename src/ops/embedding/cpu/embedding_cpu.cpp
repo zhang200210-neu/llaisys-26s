@@ -6,8 +6,11 @@
 #include <cstring>
 
 namespace llaisys::ops::cpu {
-void embedding(std::byte *out, const std::byte *index, const std::byte *weight, llaisysDataType_t type,
-               size_t index_numel, size_t embd_dim, size_t weight_rows) {
+
+void embedding(std::byte *out, const std::byte *index, const std::byte *weight,
+               llaisysDataType_t type, size_t index_numel, size_t embd_dim,
+               size_t weight_rows) {
+    // 获取单个数据类型的字节大小
     size_t elem_size = 0;
     switch (type) {
     case LLAISYS_DTYPE_F32:
@@ -19,15 +22,19 @@ void embedding(std::byte *out, const std::byte *index, const std::byte *weight, 
         EXCEPTION_UNSUPPORTED_DATATYPE(type);
     }
 
-    const int64_t *idx_ptr = reinterpret_cast<const int64_t *>(index);
-    size_t row_bytes = embd_dim * elem_size;
+    const size_t row_bytes = embd_dim * elem_size;
+    const int64_t *indices = reinterpret_cast<const int64_t *>(index);
 
     for (size_t i = 0; i < index_numel; ++i) {
-        int64_t idx = idx_ptr[i];
-        ASSERT(idx >= 0 && static_cast<size_t>(idx) < weight_rows, "Embedding: index out of range.");
+        const int64_t idx = indices[i];
+        ASSERT(idx >= 0 && static_cast<size_t>(idx) < weight_rows,
+               "Embedding: index out of range.");
+
         const std::byte *src = weight + static_cast<size_t>(idx) * row_bytes;
-        std::byte *dst = out + i * row_bytes;
+        std::byte       *dst = out    + i * row_bytes;
+
         std::memcpy(dst, src, row_bytes);
     }
 }
+
 } // namespace llaisys::ops::cpu
