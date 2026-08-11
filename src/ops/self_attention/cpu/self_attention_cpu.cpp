@@ -35,13 +35,12 @@ namespace {
         const size_t out_seq_stride = nhead * dv;
 
         const int head_factor = static_cast<int>(nhead / nkvh);
-        const int causal_limit = static_cast<int>(qlen - kvlen); // used below: s + kvlen - qlen
 
         std::vector<float> logits(kvlen);
         std::vector<float> probs(kvlen);
 
         for (size_t s = 0; s < qlen; ++s) {
-            const int allow_upto = static_cast<int>(s) + causal_limit;
+            const int allow_upto = static_cast<int>(s + kvlen - qlen);
 
             for (size_t h = 0; h < nhead; ++h) {
                 const T *q_vec = q_ptr + s * q_seq_stride + h * q_head_stride;
@@ -51,7 +50,6 @@ namespace {
 
                 float max_logit = -std::numeric_limits<float>::infinity();
 
-                // logits computation with causal mask
                 for (size_t t = 0; t < kvlen; ++t) {
                     float logit;
                     if (static_cast<int>(t) > allow_upto) {
@@ -92,6 +90,8 @@ namespace {
         }
     }
 
+ 
+
     template <typename T>
     void self_attn_segmented_impl(std::byte *const out,
                                   const std::byte *const q,
@@ -125,7 +125,6 @@ namespace {
         std::vector<float> logits(kvlen);
         std::vector<float> probs(kvlen);
 
-        // Build query -> segment mapping
         std::vector<size_t> q2seg(qlen, 0);
         for (size_t seg = 0; seg < nseg; ++seg) {
             const size_t qb = static_cast<size_t>(q_offsets[seg]);
